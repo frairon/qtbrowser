@@ -1,5 +1,8 @@
 TEMPLATE    = app
 TARGET      = qtbrowser
+CONFIG += debug
+QT_CONFIG += debug
+QMAKE_CXXFLAGS += -g
 
 HEADERS     += \
                sslhandler.h \
@@ -44,7 +47,7 @@ contains(QT_MAJOR_VERSION, 4) {
          webkit
 
    contains(QT_CONFIG, opengl){
-      QT += \ 
+      QT += \
             opengl
    }
 
@@ -63,13 +66,13 @@ contains(QT_MAJOR_VERSION, 5) {
          webkitwidgets
 
    contains(QT_CONFIG, opengl){
-      QT += \ 
+      QT += \
             opengl
    }
 
    qtHaveModule(quick):qtHaveModule(qml) {
       message("Modules qml and quick found.")
- 
+
      QT += \
          qml quick
 

@@ -31,7 +31,7 @@
 #include <QNetworkAccessManager>
 
 #include <QDesktopWidget>
- 
+
 #include <QWebSettings>
 
 #include <QDesktopServices>
@@ -47,8 +47,6 @@
 #include <QJsonParseError>
 #include <QJsonArray>
 
-// Send the output to the system logger, instead of to stdout/stderr
-#include <SysLog.h>
 
 #ifdef QT_BUILD_WITH_WEBDRIVER
 int startWebDriver();
@@ -106,7 +104,6 @@ void print_version() {
   // The BROWSERVERSION information should come from the makefile/git tagging policy
   //  This still needs to be figured out, so for now it is hard-coded
 #define BROWSERVERSION  "2.0.14"
-  WTF::sysLogF("Browser version: %s\n\n", BROWSERVERSION);
 }
 
 void webSettingAttribute(QWebSettings::WebAttribute option, const QString& value) {
@@ -148,9 +145,8 @@ int main(int argc, char *argv[]) {
 #endif
 #endif
     settings->setAttribute(QWebSettings::WebAudioEnabled, true);
-    settings->setAttribute(QWebSettings::PluginsEnabled, false);
+    settings->setAttribute(QWebSettings::PluginsEnabled, true);
     settings->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
-    settings->setAttribute(QWebSettings::WebSecurityEnabled, true);
     settings->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, true);
     settings->setAttribute(QWebSettings::LocalStorageEnabled, true);
     settings->enablePersistentStorage(path);
@@ -172,7 +168,7 @@ int main(int argc, char *argv[]) {
     unsigned int inspectorPort = 0;
     LogLevel requiredLogging = LOGGING_EXTENDED;
     QString whitelistFilename;
- 
+
     for (int ax = 1; ax < argc; ++ax) {
         size_t nlen;
 
@@ -235,8 +231,6 @@ int main(int argc, char *argv[]) {
             webSettingAttribute(QWebSettings::PrivateBrowsingEnabled, value);
         } else if (strncmp("--spatial-navigation", s, nlen) == 0) {
             webSettingAttribute(QWebSettings::SpatialNavigationEnabled, value);
-        } else if (strncmp("--websecurity", s, nlen) == 0) {
-            webSettingAttribute(QWebSettings::WebSecurityEnabled, value);
         } else if (strncmp("--whitelist-config", s, nlen) == 0) {
             whitelistFilename = QString(value);
         } else if (strncmp("--inspector", s, nlen) == 0) {
@@ -273,7 +267,6 @@ int main(int argc, char *argv[]) {
           QString cookiePath(value);
           // Create persistent cookie-jar, path to the cookie jar is set to the
           //   default data path unless it was overruled via command-line option
-          settings->enablePersistentCookieStorage(cookiePath);
         }
     }
 
@@ -311,7 +304,7 @@ int main(int argc, char *argv[]) {
 
     webview->initialize();
 
-    webview->load(url.isEmpty() ? QUrl("http://www.google.com") : url);
+	webview->load(url.isEmpty() ? QUrl("http://localhost:3007") : url);
     webview->resize(size);
     webview->setFocus();
     webview->show();
@@ -339,7 +332,6 @@ void processWhitelistingURIs(const QString& whitelistFilename, QList<QWebSecurit
 
     if(jerror.error != QJsonParseError::NoError)
     {
-      WTF::sysLogF("[browser] ERROR: parsing whitelist configuration file %s", whitelistFilename.toUtf8().constData());
     }
     else
     {
@@ -351,7 +343,7 @@ void processWhitelistingURIs(const QString& whitelistFilename, QList<QWebSecurit
         QJsonObject entry  = entries[index].toObject();
         QString origin     = entry["origin"].toString();
         QWebSecurityOrigin* subdomains = new QWebSecurityOrigin(origin);
- 
+
         QJsonArray subdomainUris = entry["domain"].toArray();
         for(int domainIndex = 0; domainIndex < subdomainUris.size(); ++domainIndex)
         {
@@ -363,13 +355,11 @@ void processWhitelistingURIs(const QString& whitelistFilename, QList<QWebSecurit
         originList.append(subdomains);
       }
 
-      WTF::sysLogF("[browser] INFO: whitelisted %d URIs", numberWhiteListed);
     }
 
     whitelistConfigFile.close();
   }
   else
   {
-    WTF::sysLogF("[browser] WARNING: Unable to open whitelist configuration file %s", whitelistFilename.toUtf8().constData());
   }
 }
